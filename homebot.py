@@ -9,6 +9,7 @@ import sys
 import threading
 import time
 import websockets
+from datetime import datetime
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -34,16 +35,19 @@ class Homebot:
         self.dispatcher = Dispatcher()
         self.scheduler = Scheduler(self.dispatcher)
         # self.websocket_listener = WebsocketListener()
-        self.selected_device = None
-        self.selected_group = None
-        self.devices = []
-        self.groups = []
-
-        # self.get_devices()
+        # self.selected_device = None
+        # self.selected_group = None
+        self.devices = self.get_devices()
+        # self.groups = []
 
     def get_devices(self):
-        self.devices = self.dispatcher.get_devices()
-        return self.devices
+        return self.dispatcher.get_devices()
+
+    def update_devices(self):
+        self.devices = self.get_devices()
+
+    def is_all_off(self):
+        return self.dispatcher.is_all_off()
 
     # update light state from websocket event
 
@@ -54,31 +58,36 @@ class Homebot:
 class WeatherClient:
 
     def __init__(self):
-        pass
+        self.last_weather_json = None
 
     def get_current_weather(self):
         url = f'{WEATHER_API_URL}/current.json'
         response = requests.get(url, params={'key': WEATHER_API_KEY, 'q': WEATHER_LOCATION})
         return response.json()
 
+    def update_weather(self):
+        self.last_weather_json = self.get_current_weather()
+
 class ColorCalculator:
 
-    @staticmethod
-    def calculate_color_settings(weather_json):
+    def __init__(self, homebot):
+        self.homebot = homebot
+
+    def calculate_color_settings(self, weather_json):
+        current_time = datetime.now().time()
+        if self.homebot.is_all_off() and current_time.hour < 8:
+            return {'on': False}
+
         rain_hue = 45000
 
-        settings = ColorCalculator.uv_to_bulb_settings(weather_json['current']['uv'])
-        if weather_json['current']['is_day'] == 1 and ColorCalculator.is_inclement_weather(weather_json):
+        settings = self.uv_to_bulb_settings(weather_json['current']['uv'])
+        if weather_json['current']['is_day'] == 1 and self.is_inclement_weather(weather_json):
             settings['hue'] = rain_hue
             settings['sat'] = max(settings['sat'] * 2, 255)
             settings['bri'] = int(settings['bri'] * 0.7)
-        # stay off if lights already turned off
-        # if lights_off:
-        #     settings = {'on': False}
         return settings
 
-    @staticmethod
-    def uv_to_bulb_settings(uv_index):
+    def uv_to_bulb_settings(self, uv_index):
         # Maximum UV index you defined
         uv_max = 9
         if uv_index > uv_max:
@@ -102,8 +111,7 @@ class ColorCalculator:
         # Return the bulb settings as a dictionary
         return {"bri": bri, "hue": hue, "sat": sat}
 
-    @staticmethod
-    def is_inclement_weather(weather_json):
+    def is_inclement_weather(self, weather_json):
         clement_weather_codes = [1000, 1003, 1006, 1009, 1030]
         return weather_json['current']['condition']['code'] not in clement_weather_codes
 
@@ -185,6 +193,19 @@ class Dispatcher:
         url = f'{API_URL}/{API_KEY}/lights'
         response = requests.get(url)
         return [Device(device_info, device_id) for device_id, device_info in response.json().items()]
+
+    def get_groups(self):
+        url = f'{API_URL}/{API_KEY}/groups'
+        response = requests.get(url)
+        return response.json()
+
+    def get_group_all(self):
+        url = f'{API_URL}/{API_KEY}/groups/0'
+        response = requests.get(url)
+        return response.json()
+
+    def is_all_off(self):
+        return self.get_group_all()['state']['any_on'] == False
 
     # get groups via API
 
