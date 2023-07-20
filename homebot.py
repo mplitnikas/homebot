@@ -17,8 +17,8 @@ load_dotenv()
 BASE_URL = os.getenv('BASE_URL')
 API_PORT = os.getenv('API_PORT')
 WEBSOCKETS_PORT = os.getenv('WEBSOCKETS_PORT')
-WEBSOCKETS_URL = f'ws://{BASE_URL}:8081'
-API_URL = f'http://{BASE_URL}:8080/api'
+WEBSOCKETS_URL = f'ws://{BASE_URL}:{WEBSOCKETS_PORT}'
+API_URL = f'http://{BASE_URL}:{API_PORT}/api'
 API_KEY = os.getenv('API_KEY')
 WEATHER_API_KEY = os.getenv('WEATHER_API_KEY')
 WEATHER_API_URL = os.getenv('WEATHER_API_URL')
