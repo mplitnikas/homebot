@@ -115,7 +115,6 @@ class ColorCalculator:
         clement_weather_codes = [1000, 1003, 1006, 1009, 1030]
         return weather_json['current']['condition']['code'] not in clement_weather_codes
 
-
 class Scheduler:
     def __init__(self, dispatcher):
         self.dispatcher = dispatcher
