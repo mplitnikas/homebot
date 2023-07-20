@@ -21,6 +21,7 @@ API_URL = f'http://{BASE_URL}:8080/api'
 API_KEY = os.getenv('API_KEY')
 WEATHER_API_KEY = os.getenv('WEATHER_API_KEY')
 WEATHER_API_URL = os.getenv('WEATHER_API_URL')
+WEATHER_LOCATION = os.getenv('WEATHER_LOCATION')
 
 ALL_LIGHTS_GROUP = os.getenv('ALL_LIGHTS_GROUP')
 LIVING_ROOM_GROUP = os.getenv('LIVING_ROOM_GROUP')
@@ -49,6 +50,63 @@ class Homebot:
     # handle button events from remote incl long-press & double-click
     # leave non-simple press events for later, may not be needed
     # for now, just toggle all lights off / on in current state for schedule
+
+class WeatherClient:
+
+    def __init__(self):
+        pass
+
+    def get_current_weather(self):
+        url = f'{WEATHER_API_URL}/current.json'
+        response = requests.get(url, params={'key': WEATHER_API_KEY, 'q': WEATHER_LOCATION})
+        return response.json()
+
+class ColorCalculator:
+
+    @staticmethod
+    def calculate_color_settings(weather_json):
+        rain_hue = 45000
+
+        settings = ColorCalculator.uv_to_bulb_settings(weather_json['current']['uv'])
+        if weather_json['current']['is_day'] == 1 and ColorCalculator.is_inclement_weather(weather_json):
+            settings['hue'] = rain_hue
+            settings['sat'] = max(settings['sat'] * 2, 255)
+            settings['bri'] = int(settings['bri'] * 0.7)
+        # stay off if lights already turned off
+        # if lights_off:
+        #     settings = {'on': False}
+        return settings
+
+    @staticmethod
+    def uv_to_bulb_settings(uv_index):
+        # Maximum UV index you defined
+        uv_max = 9
+        if uv_index > uv_max:
+            uv_index = uv_max
+
+        # Bulb settings at maximum UV index (midday: bright and white)
+        bri_max = 255
+        hue_max = 8000
+        sat_max = 255
+
+        # Bulb settings at minimum UV index (sunrise/sunset: dim and red)
+        bri_min = 120
+        hue_min = 1600
+        sat_min = 25
+
+        # Calculate the bulb settings based on the current UV index
+        bri = int((uv_index / uv_max) * (bri_max - bri_min) + bri_min)
+        hue = int((uv_index / uv_max) * (hue_max - hue_min) + hue_min)
+        sat = int((1 - uv_index / uv_max) * (sat_max - sat_min) + sat_min)  # Inverse relationship
+
+        # Return the bulb settings as a dictionary
+        return {"bri": bri, "hue": hue, "sat": sat}
+
+    @staticmethod
+    def is_inclement_weather(weather_json):
+        clement_weather_codes = [1000, 1003, 1006, 1009, 1030]
+        return weather_json['current']['condition']['code'] not in clement_weather_codes
+
 
 class Scheduler:
     def __init__(self, dispatcher):
