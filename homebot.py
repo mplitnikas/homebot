@@ -32,8 +32,9 @@ BEDROOM_LIGHTS_GROUP = os.getenv('BEDROOM_LIGHTS_GROUP')
 
 class Homebot:
     def __init__(self):
+        self.weather_client = WeatherClient()
         self.dispatcher = Dispatcher()
-        self.scheduler = Scheduler(self.dispatcher)
+        self.scheduler = Scheduler(self)
         # self.websocket_listener = WebsocketListener()
         # self.selected_device = None
         # self.selected_group = None
@@ -63,10 +64,9 @@ class WeatherClient:
     def get_current_weather(self):
         url = f'{WEATHER_API_URL}/current.json'
         response = requests.get(url, params={'key': WEATHER_API_KEY, 'q': WEATHER_LOCATION})
-        return response.json()
-
-    def update_weather(self):
-        self.last_weather_json = self.get_current_weather()
+        json = response.json()
+        self.last_weather_json = json
+        return json
 
 class ColorCalculator:
 
@@ -81,9 +81,21 @@ class ColorCalculator:
         rain_hue = 45000
 
         settings = self.uv_to_bulb_settings(weather_json['current']['uv'])
+        settings = {**settings, 'on': True}
         if weather_json['current']['is_day'] == 1 and self.is_inclement_weather(weather_json):
             settings['hue'] = rain_hue
             settings['sat'] = max(settings['sat'] * 2, 255)
+            settings['bri'] = int(settings['bri'] * 0.7)
+        return settings
+
+    def calculate_non_color_settings(self, weather_json):
+        current_time = datetime.now().time()
+        if self.homebot.is_all_off() and current_time.hour < 8:
+            return {'on': False}
+
+        settings = self.uv_to_bulb_settings(weather_json['current']['uv'])
+        settings = {'bri': settings['bri'], 'on': True}
+        if weather_json['current']['is_day'] == 1 and self.is_inclement_weather(weather_json):
             settings['bri'] = int(settings['bri'] * 0.7)
         return settings
 
@@ -116,37 +128,30 @@ class ColorCalculator:
         return weather_json['current']['condition']['code'] not in clement_weather_codes
 
 class Scheduler:
-    def __init__(self, dispatcher):
-        self.dispatcher = dispatcher
-        # self.schedule_jobs()
-        # self.run_jobs() # TODO run in separate thread
+    def __init__(self, homebot):
+        self.homebot = homebot
+        self.dispatcher = homebot.dispatcher
+        self.weather_client = homebot.weather_client
+        self.color_calculator = ColorCalculator(self.homebot)
 
     def schedule_jobs(self):
-        schedule.every().day.at('08:30').do(self.morning)
-        schedule.every().day.at('11:00').do(self.afternoon)
-        schedule.every().day.at('18:00').do(self.evening)
-        schedule.every().day.at('20:30').do(self.night)
+        for t in [':01', ':16', ':31', ':46']:
+            schedule.every().hour.at(t).do(self.set_group_state_from_weather)
 
     def run_jobs(self):
         while True:
             schedule.run_pending()
-            time.sleep(10)
+            time.sleep(60)
 
-    def morning(self):
-        self.dispatcher.set_group_state(MOOD_LIGHTS_GROUP, {'on': True, 'bri': 255, 'ct': 500})
-        self.dispatcher.set_group_state(MAIN_LIGHTS_GROUP, {'on': True, 'bri': 255})
+    def set_group_state_from_weather(self):
+        weather = self.weather_client.get_current_weather()
 
-    def afternoon(self):
-        self.dispatcher.set_group_state(MOOD_LIGHTS_GROUP, {'on': True, 'bri': 255, 'ct': 300})
-        self.dispatcher.set_group_state(MAIN_LIGHTS_GROUP, {'on': True, 'bri': 255})
+        color_settings = self.color_calculator.calculate_color_settings(weather)
+        self.dispatcher.set_group_state(MOOD_LIGHTS_GROUP, color_settings)
 
-    def evening(self):
-        self.dispatcher.set_group_state(MOOD_LIGHTS_GROUP, {'on': True, 'bri': 150, 'hue': 4000, 'sat': 255})
-        self.dispatcher.set_group_state(MAIN_LIGHTS_GROUP, {'on': True, 'bri': 80})
+        non_color_settings = self.color_calculator.calculate_non_color_settings(weather)
+        self.dispatcher.set_group_state(MAIN_LIGHTS_GROUP, non_color_settings)
 
-    def night(self):
-        self.dispatcher.set_group_state(MOOD_LIGHTS_GROUP, {'on': True, "hue": 1600, "sat": 255, "bri": 120})
-        self.dispatcher.set_group_state(MAIN_LIGHTS_GROUP, {'on': False})
 
 class Device:
     def __init__(self, device_info, device_id):
@@ -205,12 +210,6 @@ class Dispatcher:
 
     def is_all_off(self):
         return self.get_group_all()['state']['any_on'] == False
-
-    # get groups via API
-
-    # ! scenes may not work with the sengled bulbs - may need to make manually
-    # get scenes
-    # recall scenes
 
 class WebsocketListener:
 
