@@ -169,8 +169,8 @@ class Scheduler:
         self.weather_client.get_current_uv()
 
     def set_group_state_from_weather(self):
-        weather = self.weather_client.last_weather_json
-        uv = self.weather_client.last_uv_json
+        weather = self.weather_client.last_weather_json or self.weather_client.get_current_weather()
+        uv = self.weather_client.last_uv_json or self.weather_client.get_current_uv()
 
         color_settings = self.color_calculator.calculate_color_settings(weather, uv)
         self.dispatcher.set_group_state(MOOD_LIGHTS_GROUP, color_settings)
