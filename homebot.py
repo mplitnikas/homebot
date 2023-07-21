@@ -135,8 +135,7 @@ class Scheduler:
         self.color_calculator = ColorCalculator(self.homebot)
 
     def schedule_jobs(self):
-        for t in [':01', ':16', ':31', ':46']:
-            schedule.every().hour.at(t).do(self.set_group_state_from_weather)
+        schedule.every(5).minutes.do(self.set_group_state_from_weather)
 
     def run_jobs(self):
         while True:
