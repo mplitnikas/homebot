@@ -153,6 +153,8 @@ class Scheduler:
         self.color_calculator = ColorCalculator(self.homebot)
 
     def schedule_jobs(self):
+        schedule.every(5).minutes.do(self.update_weather_json)
+        schedule.every(36).minutes.do(self.update_uv_json)
         schedule.every(5).minutes.do(self.set_group_state_from_weather)
 
     def run_jobs(self):
@@ -160,9 +162,15 @@ class Scheduler:
             schedule.run_pending()
             time.sleep(60)
 
+    def update_weather_json(self):
+        self.weather_client.get_current_weather()
+
+    def update_uv_json(self):
+        self.weather_client.get_current_uv()
+
     def set_group_state_from_weather(self):
-        weather = self.weather_client.get_current_weather()
-        uv = self.weather_client.get_current_uv()
+        weather = self.weather_client.last_weather_json
+        uv = self.weather_client.last_uv_json
 
         color_settings = self.color_calculator.calculate_color_settings(weather, uv)
         self.dispatcher.set_group_state(MOOD_LIGHTS_GROUP, color_settings)
