@@ -23,6 +23,10 @@ API_KEY = os.getenv('API_KEY')
 WEATHER_API_KEY = os.getenv('WEATHER_API_KEY')
 WEATHER_API_URL = os.getenv('WEATHER_API_URL')
 WEATHER_LOCATION = os.getenv('WEATHER_LOCATION')
+UV_API_URL = os.getenv('UV_API_URL')
+UV_API_KEY = os.getenv('UV_API_KEY')
+LOCAL_LAT = os.getenv('LOCAL_LAT')
+LOCAL_LNG = os.getenv('LOCAL_LNG')
 
 ALL_LIGHTS_GROUP = os.getenv('ALL_LIGHTS_GROUP')
 LIVING_ROOM_GROUP = os.getenv('LIVING_ROOM_GROUP')
@@ -60,6 +64,7 @@ class WeatherClient:
 
     def __init__(self):
         self.last_weather_json = None
+        self.last_uv_json = None
 
     def get_current_weather(self):
         url = f'{WEATHER_API_URL}/current.json'
@@ -68,19 +73,27 @@ class WeatherClient:
         self.last_weather_json = json
         return json
 
+    def get_current_uv(self):
+        response = requests.get(UV_API_URL, params={'lat': LOCAL_LAT, 'lng': LOCAL_LNG}, headers={'x-access-token': UV_API_KEY})
+        json = response.json()
+        self.last_uv_json = json
+        return json
+
 class ColorCalculator:
 
     def __init__(self, homebot):
         self.homebot = homebot
 
-    def calculate_color_settings(self, weather_json):
+    def calculate_color_settings(self, weather_json, uv_json):
         current_time = datetime.now().time()
-        if self.homebot.is_all_off() and current_time.hour < 8:
+        all_off = self.homebot.is_all_off()
+
+        if all_off and current_time.hour < 8:
             return {'on': False}
 
         rain_hue = 45000
 
-        settings = self.uv_to_bulb_settings(weather_json['current']['uv'])
+        settings = self.uv_to_bulb_settings(uv_json['result']['uv'])
         settings = {**settings, 'on': True}
         if weather_json['current']['is_day'] == 1 and self.is_inclement_weather(weather_json):
             settings['hue'] = rain_hue
@@ -88,15 +101,20 @@ class ColorCalculator:
             settings['bri'] = int(settings['bri'] * 0.7)
         return settings
 
-    def calculate_non_color_settings(self, weather_json):
+    def calculate_non_color_settings(self, weather_json, uv_json):
         current_time = datetime.now().time()
-        if self.homebot.is_all_off() and current_time.hour < 8:
+        all_off = self.homebot.is_all_off()
+
+        if all_off and current_time.hour < 8:
             return {'on': False}
 
-        settings = self.uv_to_bulb_settings(weather_json['current']['uv'])
+        settings = self.uv_to_bulb_settings(uv_json['result']['uv'])
         settings = {'bri': settings['bri'], 'on': True}
         if weather_json['current']['is_day'] == 1 and self.is_inclement_weather(weather_json):
             settings['bri'] = int(settings['bri'] * 0.7)
+        if weather_json['current']['is_day'] == 0:
+            settings['bri'] = 0
+            settings['on'] = False
         return settings
 
     def uv_to_bulb_settings(self, uv_index):
@@ -144,11 +162,12 @@ class Scheduler:
 
     def set_group_state_from_weather(self):
         weather = self.weather_client.get_current_weather()
+        uv = self.weather_client.get_current_uv()
 
-        color_settings = self.color_calculator.calculate_color_settings(weather)
+        color_settings = self.color_calculator.calculate_color_settings(weather, uv)
         self.dispatcher.set_group_state(MOOD_LIGHTS_GROUP, color_settings)
 
-        non_color_settings = self.color_calculator.calculate_non_color_settings(weather)
+        non_color_settings = self.color_calculator.calculate_non_color_settings(weather, uv)
         self.dispatcher.set_group_state(MAIN_LIGHTS_GROUP, non_color_settings)
 
 
