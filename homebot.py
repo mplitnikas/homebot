@@ -37,6 +37,7 @@ BEDROOM_LIGHTS_GROUP = os.getenv('BEDROOM_LIGHTS_GROUP')
 class Homebot:
     def __init__(self):
         self.weather_client = WeatherClient()
+        self.color_calculator = ColorCalculator(self)
         self.dispatcher = Dispatcher()
         self.scheduler = Scheduler(self)
         # self.websocket_listener = WebsocketListener()
@@ -150,7 +151,7 @@ class Scheduler:
         self.homebot = homebot
         self.dispatcher = homebot.dispatcher
         self.weather_client = homebot.weather_client
-        self.color_calculator = ColorCalculator(self.homebot)
+        self.color_calculator = homebot.color_calculator
 
     def schedule_jobs(self):
         schedule.every(5).minutes.do(self.update_weather_json)
