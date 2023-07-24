@@ -89,7 +89,7 @@ class ColorCalculator:
         current_time = datetime.now().time()
         all_off = self.homebot.is_all_off()
 
-        if all_off and current_time.hour < 8:
+        if all_off and (current_time.hour < 8 or current_time.hour > 21):
             return {'on': False}
 
         rain_hue = 45000
@@ -106,7 +106,7 @@ class ColorCalculator:
         current_time = datetime.now().time()
         all_off = self.homebot.is_all_off()
 
-        if all_off and current_time.hour < 8:
+        if all_off and (current_time.hour < 8 or current_time.hour > 21):
             return {'on': False}
 
         settings = self.uv_to_bulb_settings(uv_json['result']['uv'])
