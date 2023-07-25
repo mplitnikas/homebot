@@ -156,7 +156,7 @@ class Scheduler:
     def schedule_jobs(self):
         schedule.every(5).minutes.do(self.update_weather_json)
         schedule.every(36).minutes.do(self.update_uv_json)
-        schedule.every(5).minutes.do(self.set_group_state_from_weather)
+        schedule.every(1).minutes.do(self.set_group_state_from_weather)
 
     def run_jobs(self):
         while True:
