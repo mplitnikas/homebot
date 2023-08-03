@@ -75,6 +75,7 @@ class WeatherClient:
             self.last_weather_json = json
             return json
         except Exception as e:
+            print('=' * 5, datetime.now(), '=' * 5)
             print('error fetching weather: ', e)
             return self.read_last_weather_json()
 
@@ -85,6 +86,7 @@ class WeatherClient:
             self.last_uv_json = json
             return json
         except Exception as e:
+            print('=' * 5, datetime.now(), '=' * 5)
             print('error fetching uv: ', e)
             return self.read_last_uv_json()
 
