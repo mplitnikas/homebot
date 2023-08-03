@@ -69,16 +69,24 @@ class WeatherClient:
 
     def get_current_weather(self):
         url = f'{WEATHER_API_URL}/current.json'
-        response = requests.get(url, params={'key': WEATHER_API_KEY, 'q': WEATHER_LOCATION})
-        json = response.json()
-        self.last_weather_json = json
-        return json
+        try:
+            response = requests.get(url, params={'key': WEATHER_API_KEY, 'q': WEATHER_LOCATION})
+            json = response.json()
+            self.last_weather_json = json
+            return json
+        except Exception as e:
+            print('error fetching weather: ', e)
+            return self.read_last_weather_json()
 
     def get_current_uv(self):
-        response = requests.get(UV_API_URL, params={'lat': LOCAL_LAT, 'lng': LOCAL_LNG}, headers={'x-access-token': UV_API_KEY})
-        json = response.json()
-        self.last_uv_json = json
-        return json
+        try:
+            response = requests.get(UV_API_URL, params={'lat': LOCAL_LAT, 'lng': LOCAL_LNG}, headers={'x-access-token': UV_API_KEY})
+            json = response.json()
+            self.last_uv_json = json
+            return json
+        except Exception as e:
+            print('error fetching uv: ', e)
+            return self.read_last_uv_json()
 
 class ColorCalculator:
 
