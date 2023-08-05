@@ -64,31 +64,36 @@ class Homebot:
 class WeatherClient:
 
     def __init__(self):
-        self.last_weather_json = None
-        self.last_uv_json = None
+        self.last_weather = None
 
-    def get_current_weather(self):
+    def get_last_weather(self):
+        return self.last_weather
+
+    def get_last_uv(self):
+        path = 'last_uv.json'
+        if os.path.exists(path):
+            with open(path, 'r') as f:
+                return json.loads(f)
+
+    def update_weather(self):
         url = f'{WEATHER_API_URL}/current.json'
         try:
             response = requests.get(url, params={'key': WEATHER_API_KEY, 'q': WEATHER_LOCATION})
-            json = response.json()
-            self.last_weather_json = json
-            return json
+            resp = response.json()
+            self.last_weather = resp
         except Exception as e:
             print('=' * 5, datetime.now(), '=' * 5)
             print('error fetching weather: ', e)
-            return self.read_last_weather_json()
 
-    def get_current_uv(self):
+    def update_uv(self):
         try:
             response = requests.get(UV_API_URL, params={'lat': LOCAL_LAT, 'lng': LOCAL_LNG}, headers={'x-access-token': UV_API_KEY})
-            json = response.json()
-            self.last_uv_json = json
-            return json
+            resp = response.json()
+            with open('last_uv.json', 'w') as f:
+                json.dump(resp, f)
         except Exception as e:
             print('=' * 5, datetime.now(), '=' * 5)
             print('error fetching uv: ', e)
-            return self.read_last_uv_json()
 
 class ColorCalculator:
 
@@ -164,8 +169,8 @@ class Scheduler:
         self.color_calculator = homebot.color_calculator
 
     def schedule_jobs(self):
-        schedule.every(5).minutes.do(self.update_weather_json)
-        schedule.every(36).minutes.do(self.update_uv_json)
+        schedule.every(30).minutes.do(self.weather_client.update_weather)
+        schedule.every().day.at("12:00").do(self.weather_client.update_uv)
         schedule.every(1).minutes.do(self.set_group_state_from_weather)
 
     def run_jobs(self):
@@ -173,15 +178,9 @@ class Scheduler:
             schedule.run_pending()
             time.sleep(60)
 
-    def update_weather_json(self):
-        self.weather_client.get_current_weather()
-
-    def update_uv_json(self):
-        self.weather_client.get_current_uv()
-
     def set_group_state_from_weather(self):
-        weather = self.weather_client.last_weather_json or self.weather_client.get_current_weather()
-        uv = self.weather_client.last_uv_json or self.weather_client.get_current_uv()
+        weather = self.weather_client.get_last_weather()
+        uv = self.weather_client.get_last_uv()
 
         color_settings = self.color_calculator.calculate_color_settings(weather, uv)
         self.dispatcher.set_group_state(MOOD_LIGHTS_GROUP, color_settings)
