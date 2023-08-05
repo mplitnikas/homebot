@@ -22,7 +22,7 @@ class WeatherClient:
         path = 'last_uv.json'
         if os.path.exists(path):
             with open(path, 'r') as f:
-                return json.loads(f)
+                return json.loads(f.read())
 
     def update_weather(self):
         url = f'{self.weather_api_url}/current.json'
