@@ -25,6 +25,19 @@ class WeatherClient:
             with open(path, 'r') as f:
                 return json.loads(f.read())
 
+    def get_sun_times(self):
+        path = 'sun_times.json'
+        if os.path.exists(path):
+            with open(path, 'r') as f:
+                return json.loads(f.read())
+
+    def convert_sun_times(self, data):
+        sun_info = data['result']['sun_info']['sun_times']
+        # list comprehension to convert all times to local datetime objects
+        return {k:
+                datetime.fromisoformat(v).astimezone().strftime("%Y-%m-%d %H:%M:%S.%f %Z%z")
+                for k, v in sun_info.items()}
+
     def update_weather(self):
         url = f'{self.weather_api_url}/current.json'
         try:
@@ -43,8 +56,9 @@ class WeatherClient:
                 headers={'x-access-token': self.uv_api_key}
             )
             resp = response.json()
-            with open('last_uv.json', 'w') as f:
-                json.dump(resp, f)
+            st = self.convert_sun_times(resp)
+            with open('sun_times.json', 'w') as f:
+                json.dump(st, f)
         except Exception as e:
             print('=' * 5, datetime.now(), '=' * 5)
             print('error fetching uv: ', e)

@@ -161,4 +161,4 @@ cython_debug/
 activate/
 bin/
 pyvenv.cfg
-last_uv.json
+sun_times.json

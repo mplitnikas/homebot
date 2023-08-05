@@ -9,8 +9,9 @@ class Scheduler:
         self.color_calculator = homebot.color_calculator
 
     def schedule_jobs(self):
+        # update sunrise/sunset times overnight
+        schedule.every().day.at("01:00").do(self.weather_client.update_uv)
         schedule.every(30).minutes.do(self.weather_client.update_weather)
-        schedule.every().day.at("12:00").do(self.weather_client.update_uv)
         schedule.every(1).minutes.do(self.set_group_state_from_weather)
 
     def run_jobs(self):
