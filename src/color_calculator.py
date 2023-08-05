@@ -5,16 +5,16 @@ class ColorCalculator:
     def __init__(self, homebot):
         self.homebot = homebot
 
-    def calculate_color_settings(self, weather_json, uv_json):
+    def calculate_color_settings(self, weather_json: dict, uv: int, force_on=False):
         current_time = datetime.now().time()
         all_off = self.homebot.is_all_off()
 
-        if all_off and (current_time.hour < 8 or current_time.hour >= 21):
+        if all_off and not force_on:
             return {'on': False}
 
         rain_hue = 45000
 
-        settings = self.uv_to_bulb_settings(uv_json['result']['uv'])
+        settings = self.uv_to_bulb_settings(uv)
         settings = {**settings, 'on': True}
         if weather_json['current']['is_day'] == 1 and self.is_inclement_weather(weather_json):
             settings['hue'] = rain_hue
@@ -22,14 +22,14 @@ class ColorCalculator:
             settings['bri'] = int(settings['bri'] * 0.7)
         return settings
 
-    def calculate_non_color_settings(self, weather_json, uv_json):
+    def calculate_non_color_settings(self, weather_json: dict, uv: int, force_on=False):
         current_time = datetime.now().time()
         all_off = self.homebot.is_all_off()
 
-        if all_off and (current_time.hour < 8 or current_time.hour >= 21):
+        if (all_off and not force_on) or uv == 0:
             return {'on': False}
 
-        settings = self.uv_to_bulb_settings(uv_json['result']['uv'])
+        settings = self.uv_to_bulb_settings(uv)
         settings = {'bri': settings['bri'], 'on': True}
         if weather_json['current']['is_day'] == 1 and self.is_inclement_weather(weather_json):
             settings['bri'] = int(settings['bri'] * 0.7)

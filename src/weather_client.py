@@ -17,6 +17,8 @@ class WeatherClient:
         self.last_weather = None
 
     def get_last_weather(self):
+        if not self.last_weather:
+            self.update_weather()
         return self.last_weather
 
     def get_last_uv(self):
@@ -27,9 +29,10 @@ class WeatherClient:
 
     def get_sun_times(self):
         path = 'sun_times.json'
-        if os.path.exists(path):
-            with open(path, 'r') as f:
-                return json.loads(f.read())
+        if not os.path.exists(path):
+            self.update_uv()
+        with open(path, 'r') as f:
+            return json.loads(f.read())
 
     def convert_sun_times(self, data):
         sun_info = data['result']['sun_info']['sun_times']

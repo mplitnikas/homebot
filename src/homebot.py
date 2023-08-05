@@ -13,39 +13,40 @@ from weather_client import WeatherClient
 
 load_dotenv()
 
-BASE_URL = os.getenv('BASE_URL')
-API_PORT = os.getenv('API_PORT')
-WEBSOCKETS_PORT = os.getenv('WEBSOCKETS_PORT')
-WEBSOCKETS_URL = f'ws://{BASE_URL}:{WEBSOCKETS_PORT}'
-API_URL = f'http://{BASE_URL}:{API_PORT}/api'
-API_KEY = os.getenv('API_KEY')
-WEATHER_API_KEY = os.getenv('WEATHER_API_KEY')
-WEATHER_API_URL = os.getenv('WEATHER_API_URL')
-WEATHER_LOCATION = os.getenv('WEATHER_LOCATION')
-UV_API_URL = os.getenv('UV_API_URL')
-UV_API_KEY = os.getenv('UV_API_KEY')
-LOCAL_LAT = os.getenv('LOCAL_LAT')
-LOCAL_LNG = os.getenv('LOCAL_LNG')
-
-ALL_LIGHTS_GROUP = os.getenv('ALL_LIGHTS_GROUP')
-LIVING_ROOM_GROUP = os.getenv('LIVING_ROOM_GROUP')
-MOOD_LIGHTS_GROUP = os.getenv('MOOD_LIGHTS_GROUP')
-MAIN_LIGHTS_GROUP = os.getenv('MAIN_LIGHTS_GROUP')
-BEDROOM_LIGHTS_GROUP = os.getenv('BEDROOM_LIGHTS_GROUP')
-
 class Homebot:
+
+    BASE_URL = os.getenv('BASE_URL')
+    API_PORT = os.getenv('API_PORT')
+    WEBSOCKETS_PORT = os.getenv('WEBSOCKETS_PORT')
+    WEBSOCKETS_URL = f'ws://{BASE_URL}:{WEBSOCKETS_PORT}'
+    API_URL = f'http://{BASE_URL}:{API_PORT}/api'
+    API_KEY = os.getenv('API_KEY')
+    WEATHER_API_KEY = os.getenv('WEATHER_API_KEY')
+    WEATHER_API_URL = os.getenv('WEATHER_API_URL')
+    WEATHER_LOCATION = os.getenv('WEATHER_LOCATION')
+    UV_API_URL = os.getenv('UV_API_URL')
+    UV_API_KEY = os.getenv('UV_API_KEY')
+    LOCAL_LAT = os.getenv('LOCAL_LAT')
+    LOCAL_LNG = os.getenv('LOCAL_LNG')
+
+    ALL_LIGHTS_GROUP = os.getenv('ALL_LIGHTS_GROUP')
+    LIVING_ROOM_GROUP = os.getenv('LIVING_ROOM_GROUP')
+    MOOD_LIGHTS_GROUP = os.getenv('MOOD_LIGHTS_GROUP')
+    MAIN_LIGHTS_GROUP = os.getenv('MAIN_LIGHTS_GROUP')
+    BEDROOM_LIGHTS_GROUP = os.getenv('BEDROOM_LIGHTS_GROUP')
+
     def __init__(self):
         self.weather_client = WeatherClient(
-            weather_api_url=WEATHER_API_URL,
-            weather_api_key=WEATHER_API_KEY,
-            weather_location=WEATHER_LOCATION,
-            uv_api_url=UV_API_URL,
-            uv_api_key=UV_API_KEY,
-            uv_local_lat=LOCAL_LAT,
-            uv_local_lng=LOCAL_LNG
+            weather_api_url=self.WEATHER_API_URL,
+            weather_api_key=self.WEATHER_API_KEY,
+            weather_location=self.WEATHER_LOCATION,
+            uv_api_url=self.UV_API_URL,
+            uv_api_key=self.UV_API_KEY,
+            uv_local_lat=self.LOCAL_LAT,
+            uv_local_lng=self.LOCAL_LNG
         )
         self.color_calculator = ColorCalculator(self)
-        self.dispatcher = Dispatcher(api_url=API_URL, api_key=API_KEY)
+        self.dispatcher = Dispatcher(api_url=self.API_URL, api_key=self.API_KEY)
         self.scheduler = Scheduler(self)
         # self.websocket_listener = WebsocketListener()
         # self.selected_device = None
