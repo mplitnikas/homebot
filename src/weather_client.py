@@ -5,7 +5,8 @@ from datetime import datetime
 
 class WeatherClient:
 
-    def __init__(self, weather_api_url, weather_api_key, weather_location, uv_api_url, uv_api_key, uv_local_lat, uv_local_lng):
+    def __init__(self, weather_api_url, weather_api_key, weather_location,
+                 uv_api_url, uv_api_key, uv_local_lat, uv_local_lng):
         self.weather_api_url = weather_api_url
         self.weather_api_key = weather_api_key
         self.weather_location = weather_location
@@ -36,7 +37,11 @@ class WeatherClient:
 
     def update_uv(self):
         try:
-            response = requests.get(self.uv_api_url, params={'lat': self.uv_local_lat, 'lng': self.uv_local_lng}, headers={'x-access-token': self.uv_api_key})
+            response = requests.get(
+                self.uv_api_url,
+                params={'lat': self.uv_local_lat, 'lng': self.uv_local_lng},
+                headers={'x-access-token': self.uv_api_key}
+            )
             resp = response.json()
             with open('last_uv.json', 'w') as f:
                 json.dump(resp, f)
