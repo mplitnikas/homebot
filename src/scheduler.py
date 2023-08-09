@@ -24,13 +24,13 @@ class Scheduler:
         self.preset_set(1)
 
     def sunrise_sunset(self):
-        self.preset_set(2)
-
-    def morning_evening(self):
         self.preset_set(3)
 
-    def golden_hour(self):
+    def morning_evening(self):
         self.preset_set(4)
+
+    def golden_hour(self):
+        self.preset_set(6)
 
     def midday(self):
         self.preset_set(9)
