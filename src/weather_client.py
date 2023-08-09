@@ -30,7 +30,7 @@ class WeatherClient:
     def get_sun_times(self):
         path = 'sun_times.json'
         if not os.path.exists(path):
-            self.update_uv()
+            self.update_sun_times()
         with open(path, 'r') as f:
             return json.loads(f.read())
 
@@ -51,7 +51,7 @@ class WeatherClient:
             print('=' * 5, datetime.now(), '=' * 5)
             print('error fetching weather: ', e)
 
-    def update_uv(self):
+    def update_sun_times(self):
         try:
             response = requests.get(
                 self.uv_api_url,

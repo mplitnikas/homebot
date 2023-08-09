@@ -47,7 +47,7 @@ class Scheduler:
 
     def schedule_jobs(self):
         # update sunrise/sunset times overnight
-        schedule.every().day.at("01:00").do(self.weather_client.update_uv)
+        schedule.every().day.at("01:00").do(self.weather_client.update_sun_times)
         schedule.every(30).minutes.do(self.weather_client.update_weather)
         schedule.every(1).minutes.do(self.check_time_of_day)
 
