@@ -66,8 +66,10 @@ class Scheduler:
     #     non_color_settings = self.cc.calculate_non_color_settings(weather, uv)
     #     self.dispatcher.set_group_state(MAIN_LIGHTS_GROUP, non_color_settings)
 
-    def check_time_of_day(self, now=None):
-        now = now or datetime.now().astimezone()
+    def check_time_of_day(self, time_of_day=None):
+        if time_of_day is None:
+            now = datetime.now()
+            time_of_day = str((now.hour, now.minute))
 
         # ordered chronologically
         times_of_day = {
@@ -84,10 +86,9 @@ class Scheduler:
             'dusk': self.twilight,
             'nauticalDusk': self.night,
             'night': self.noop,
-            'nadir': self.noop
+            'nadir': self.noop,
+            None: self.noop
         }
         sun_times = self.weather_client.get_sun_times()
-        for time_of_day, time in sun_times.items():
-            sun_time = datetime.fromisoformat(time).astimezone()
-            if (now.hour, now.minute) == (sun_time.hour, sun_time.minute):
-                times_of_day[time_of_day]()
+        matching_time = sun_times.get(time_of_day)
+        times_of_day[matching_time]()

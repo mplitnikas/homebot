@@ -37,8 +37,7 @@ class WeatherClient:
     def convert_sun_times(self, data):
         sun_info = data['result']['sun_info']['sun_times']
         # list comprehension to convert all times to local datetime objects
-        return {k:
-                datetime.fromisoformat(v).astimezone().strftime("%Y-%m-%d %H:%M:%S.%f %Z%z")
+        return {str((datetime.fromisoformat(v).astimezone().hour, datetime.fromisoformat(v).astimezone().minute)): k
                 for k, v in sun_info.items()}
 
     def update_weather(self):
