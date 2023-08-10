@@ -3,6 +3,7 @@ import os
 import requests
 import traceback
 from datetime import datetime
+from dateutil.parser import parse
 
 class WeatherClient:
 
@@ -38,7 +39,7 @@ class WeatherClient:
     def convert_sun_times(self, data):
         sun_info = data['result']['sun_info']['sun_times']
         # list comprehension to convert sun_time: utc_time to (hour, minute): sun_time
-        return {str((datetime.fromisoformat(v).astimezone().hour, datetime.fromisoformat(v).astimezone().minute)): k
+        return {str((parse(v).astimezone().hour, parse(v).astimezone().minute)): k
                 for k, v in sun_info.items()}
 
     def update_weather(self):
