@@ -1,6 +1,7 @@
 import json
 import os
 import requests
+import traceback
 from datetime import datetime
 
 class WeatherClient:
@@ -36,7 +37,7 @@ class WeatherClient:
 
     def convert_sun_times(self, data):
         sun_info = data['result']['sun_info']['sun_times']
-        # list comprehension to convert all times to local datetime objects
+        # list comprehension to convert sun_time: utc_time to (hour, minute): sun_time
         return {str((datetime.fromisoformat(v).astimezone().hour, datetime.fromisoformat(v).astimezone().minute)): k
                 for k, v in sun_info.items()}
 
@@ -46,9 +47,9 @@ class WeatherClient:
             response = requests.get(url, params={'key': self.weather_api_key, 'q': self.weather_location})
             resp = response.json()
             self.last_weather = resp
-        except Exception as e:
+        except Exception:
             print('=' * 5, datetime.now(), '=' * 5)
-            print('error fetching weather: ', e)
+            print(traceback.format_exc())
 
     def update_sun_times(self):
         try:
@@ -61,6 +62,6 @@ class WeatherClient:
             st = self.convert_sun_times(resp)
             with open('sun_times.json', 'w') as f:
                 json.dump(st, f)
-        except Exception as e:
+        except Exception:
             print('=' * 5, datetime.now(), '=' * 5)
-            print('error fetching uv: ', e)
+            print(traceback.format_exc())
