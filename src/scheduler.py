@@ -14,11 +14,11 @@ class Scheduler:
     def noop(self):
         pass
 
-    def predawn(self):
-        self.preset_set(0, force_on=True)
-
     def night(self):
         self.preset_set(0)
+
+    def predawn(self):
+        self.preset_set(0, force_on=True)
 
     def twilight(self):
         self.preset_set(1)
@@ -75,7 +75,7 @@ class Scheduler:
         times_of_day = {
             'nightEnd': self.noop,
             'nauticalDawn': self.noop,
-            'dawn': self.night,
+            'dawn': self.predawn,
             'sunrise': self.twilight,
             'sunriseEnd': self.golden_hour,
             'goldenHourEnd': self.midday,
