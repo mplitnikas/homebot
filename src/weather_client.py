@@ -46,26 +46,18 @@ class WeatherClient:
     @retry(max_tries=3)
     def update_weather(self):
         url = f'{self.weather_api_url}/current.json'
-        try:
-            response = requests.get(url, params={'key': self.weather_api_key, 'q': self.weather_location})
-            resp = response.json()
-            self.last_weather = resp
-        except Exception:
-            print('=' * 5, datetime.now(), '=' * 5)
-            print(traceback.format_exc())
+        response = requests.get(url, params={'key': self.weather_api_key, 'q': self.weather_location})
+        resp = response.json()
+        self.last_weather = resp
 
     @retry(max_tries=3)
     def update_sun_times(self):
-        try:
-            response = requests.get(
-                self.uv_api_url,
-                params={'lat': self.uv_local_lat, 'lng': self.uv_local_lng},
-                headers={'x-access-token': self.uv_api_key}
-            )
-            resp = response.json()
-            st = self.convert_sun_times(resp)
-            with open('sun_times.json', 'w') as f:
-                json.dump(st, f)
-        except Exception:
-            print('=' * 5, datetime.now(), '=' * 5)
-            print(traceback.format_exc())
+        response = requests.get(
+            self.uv_api_url,
+            params={'lat': self.uv_local_lat, 'lng': self.uv_local_lng},
+            headers={'x-access-token': self.uv_api_key}
+        )
+        resp = response.json()
+        st = self.convert_sun_times(resp)
+        with open('sun_times.json', 'w') as f:
+            json.dump(st, f)
