@@ -4,6 +4,7 @@ import requests
 import traceback
 from datetime import datetime
 from dateutil.parser import parse
+from decorators import retry
 
 class WeatherClient:
 
@@ -42,6 +43,7 @@ class WeatherClient:
         return {str((parse(v).astimezone().hour, parse(v).astimezone().minute)): k
                 for k, v in sun_info.items()}
 
+    @retry(max_tries=3)
     def update_weather(self):
         url = f'{self.weather_api_url}/current.json'
         try:
@@ -52,6 +54,7 @@ class WeatherClient:
             print('=' * 5, datetime.now(), '=' * 5)
             print(traceback.format_exc())
 
+    @retry(max_tries=3)
     def update_sun_times(self):
         try:
             response = requests.get(
