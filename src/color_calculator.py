@@ -5,7 +5,7 @@ class ColorCalculator:
     def __init__(self, homebot):
         self.homebot = homebot
 
-    def calculate_color_settings(self, weather_json: dict, uv: int, force_on=False):
+    def calculate_color_settings(self, uv: int, force_on=False):
         current_time = datetime.now().time()
         all_off = self.homebot.is_all_off()
 
@@ -16,13 +16,9 @@ class ColorCalculator:
 
         settings = self.uv_to_bulb_settings(uv)
         settings = {**settings, 'on': True}
-        if weather_json['current']['is_day'] == 1 and self.is_inclement_weather(weather_json):
-            settings['hue'] = rain_hue
-            settings['sat'] = max(settings['sat'] * 2, 255)
-            settings['bri'] = int(settings['bri'] * 0.7)
         return settings
 
-    def calculate_non_color_settings(self, weather_json: dict, uv: int, force_on=False):
+    def calculate_non_color_settings(self, uv: int, force_on=False):
         current_time = datetime.now().time()
         all_off = self.homebot.is_all_off()
 
@@ -31,11 +27,6 @@ class ColorCalculator:
 
         settings = self.uv_to_bulb_settings(uv)
         settings = {'bri': settings['bri'], 'on': True}
-        if weather_json['current']['is_day'] == 1 and self.is_inclement_weather(weather_json):
-            settings['bri'] = int(settings['bri'] * 0.7)
-        if weather_json['current']['is_day'] == 0:
-            settings['bri'] = 0
-            settings['on'] = False
         return settings
 
     def uv_to_bulb_settings(self, uv_index):
@@ -61,7 +52,3 @@ class ColorCalculator:
 
         # Return the bulb settings as a dictionary
         return {"bri": bri, "hue": hue, "sat": sat}
-
-    def is_inclement_weather(self, weather_json):
-        clement_weather_codes = [1000, 1003, 1006, 1009, 1030]
-        return weather_json['current']['condition']['code'] not in clement_weather_codes

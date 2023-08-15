@@ -36,11 +36,10 @@ class Scheduler:
         self.preset_set(9)
 
     def preset_set(self, uv, force_on=False):
-        weather = self.weather_client.get_last_weather()
-        color_settings = self.cc.calculate_color_settings(weather, uv, force_on)
+        color_settings = self.cc.calculate_color_settings(uv, force_on)
         self.dispatcher.set_group_state(self.homebot.MOOD_LIGHTS_GROUP, color_settings)
 
-        non_color_settings = self.cc.calculate_non_color_settings(weather, uv, force_on)
+        non_color_settings = self.cc.calculate_non_color_settings(uv, force_on)
         self.dispatcher.set_group_state(self.homebot.MAIN_LIGHTS_GROUP, non_color_settings)
 
     # =======
@@ -48,23 +47,12 @@ class Scheduler:
     def schedule_jobs(self):
         # update sunrise/sunset times overnight
         schedule.every().day.at("01:00").do(self.weather_client.update_sun_times)
-        schedule.every(30).minutes.do(self.weather_client.update_weather)
         schedule.every(1).minutes.do(self.check_time_of_day)
 
     def run_jobs(self):
         while True:
             schedule.run_pending()
             time.sleep(60)
-
-    # def set_group_state_from_weather(self):
-    #     weather = self.weather_client.get_last_weather()
-    #     uv = self.weather_client.get_last_uv()
-
-    #     color_settings = self.cc.calculate_color_settings(weather, uv)
-    #     self.dispatcher.set_group_state(MOOD_LIGHTS_GROUP, color_settings)
-
-    #     non_color_settings = self.cc.calculate_non_color_settings(weather, uv)
-    #     self.dispatcher.set_group_state(MAIN_LIGHTS_GROUP, non_color_settings)
 
     def check_time_of_day(self, time_of_day=None):
         if time_of_day is None:
