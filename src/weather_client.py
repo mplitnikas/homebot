@@ -43,14 +43,14 @@ class WeatherClient:
         return {str((parse(v).astimezone().hour, parse(v).astimezone().minute)): k
                 for k, v in sun_info.items()}
 
-    @retry(max_tries=3)
+    @retry(max_tries=3, fail_silent=True)
     def update_weather(self):
         url = f'{self.weather_api_url}/current.json'
         response = requests.get(url, params={'key': self.weather_api_key, 'q': self.weather_location})
         resp = response.json()
         self.last_weather = resp
 
-    @retry(max_tries=3)
+    @retry(max_tries=3, fail_silent=True)
     def update_sun_times(self):
         response = requests.get(
             self.uv_api_url,

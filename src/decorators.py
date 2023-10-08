@@ -2,7 +2,7 @@ import time
 from datetime import datetime
 from functools import wraps
 
-def retry(max_tries, initial_wait=10, max_wait=90):
+def retry(max_tries, initial_wait=10, max_wait=90, fail_silent=False):
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -18,7 +18,8 @@ def retry(max_tries, initial_wait=10, max_wait=90):
                     print(f'retrying ({tries}/{max_tries}) - waiting {wait_time} seconds')
                     if tries == max_tries:
                         print(f'failed to call {func.__name__}')
-                        raise
+                        if not fail_silent:
+                            raise
                     else:
                         time.sleep(wait_time)
         return wrapper
