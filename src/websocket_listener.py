@@ -11,7 +11,7 @@ class WebsocketListener:
         print(event)
 
     async def websocket_client(self):
-        async with websockets.connect(WEBSOCKETS_URL) as websocket:
+        async with websockets.connect(PHOSCON_WEBSOCKETS_URL) as websocket:
             async for message in websocket:
                 self.handle_event(message)
 

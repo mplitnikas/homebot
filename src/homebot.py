@@ -9,18 +9,19 @@ from device import Device
 from dispatcher import Dispatcher
 from scheduler import Scheduler
 from weather_client import WeatherClient
+from api import Api
 # from websocket_listener import WebsocketListener
 
 load_dotenv()
 
 class Homebot:
 
-    BASE_URL = os.getenv('BASE_URL')
-    API_PORT = os.getenv('API_PORT')
-    WEBSOCKETS_PORT = os.getenv('WEBSOCKETS_PORT')
-    WEBSOCKETS_URL = f'ws://{BASE_URL}:{WEBSOCKETS_PORT}'
-    API_URL = f'http://{BASE_URL}:{API_PORT}/api'
-    API_KEY = os.getenv('API_KEY')
+    PHOSCON_BASE_URL = os.getenv('PHOSCON_BASE_URL')
+    PHOSCON_API_PORT = os.getenv('PHOSCON_API_PORT')
+    PHOSCON_WEBSOCKETS_PORT = os.getenv('PHOSCON_WEBSOCKETS_PORT')
+    PHOSCON_WEBSOCKETS_URL = f'ws://{PHOSCON_BASE_URL}:{PHOSCON_WEBSOCKETS_PORT}'
+    PHOSCON_API_URL = f'http://{PHOSCON_BASE_URL}:{PHOSCON_API_PORT}/api'
+    PHOSCON_API_KEY = os.getenv('PHOSCON_API_KEY')
     WEATHER_API_KEY = os.getenv('WEATHER_API_KEY')
     WEATHER_API_URL = os.getenv('WEATHER_API_URL')
     WEATHER_LOCATION = os.getenv('WEATHER_LOCATION')
@@ -46,7 +47,7 @@ class Homebot:
             uv_local_lng=self.LOCAL_LNG
         )
         self.color_calculator = ColorCalculator(self)
-        self.dispatcher = Dispatcher(api_url=self.API_URL, api_key=self.API_KEY)
+        self.dispatcher = Dispatcher(api_url=self.PHOSCON_API_URL, api_key=self.PHOSCON_API_KEY)
         self.scheduler = Scheduler(self)
         # self.websocket_listener = WebsocketListener()
         # self.selected_device = None
@@ -74,3 +75,5 @@ if __name__ == '__main__' and not sys.flags.interactive:
     homebot = Homebot()
     homebot.scheduler.schedule_jobs()
     homebot.scheduler.run_jobs()
+    home.api.run()
+    # TODO thread these
