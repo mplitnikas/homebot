@@ -39,8 +39,8 @@ class WeatherClient:
 
     def convert_sun_times(self, data):
         sun_info = data['result']['sun_info']['sun_times']
-        # list comprehension to convert sun_time: utc_time to (hour, minute): sun_time
-        return {str((parse(v).astimezone().hour, parse(v).astimezone().minute)): k
+        # list comprehension to convert sun_time: utc_time to "HH:MM": sun_time
+        return {f"{parse(v).astimezone().hour:02}:{parse(v).astimezone().minute:02}": k
                 for k, v in sun_info.items()}
 
     @retry(max_tries=3, fail_silent=True)

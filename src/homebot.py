@@ -12,6 +12,7 @@ from color_calculator import ColorCalculator
 from device import Device
 from dispatcher import Dispatcher
 from scheduler import Scheduler
+from time_publisher import TimePublisher
 from weather_client import WeatherClient
 from websocket_listener import WebsocketListener
 
@@ -45,6 +46,7 @@ class Homebot:
     REDIS_HOST = os.getenv('REDIS_HOST')
     REDIS_PORT = os.getenv('REDIS_PORT')
     REDIS_UPDATE_CHANNEL = os.getenv('REDIS_UPDATE_CHANNEL') # device state updates etc
+    REDIS_TIME_CHANNEL = os.getenv('REDIS_TIME_CHANNEL') # time of day updates
 
     def __init__(self):
         self.weather_client = WeatherClient(
@@ -63,6 +65,7 @@ class Homebot:
                 redis_host=self.REDIS_HOST,
                 redis_port=self.REDIS_PORT,
                 redis_update_channel=self.REDIS_UPDATE_CHANNEL)
+        self.time_publisher = TimePublisher(self.REDIS_HOST, self.REDIS_PORT, self.REDIS_TIME_CHANNEL, self.weather_client)
 
         self.devices = self.dispatcher.get_devices()
         self.groups = self.dispatcher.get_groups()
@@ -101,14 +104,14 @@ class Homebot:
 
     def updates_handler(self, message):
         if message and message['data']:
-            data = json.loads(message['data'])
-            match data['type']:
+            event = json.loads(message['data'])
+            match event['type']:
                 case "device":
-                    self.update_device(data['device_id'], data['state'])
+                    self.update_device(event['device_id'], event['state'])
                 case "group":
-                    self.update_group(data['group_id'], data['state'])
+                    self.update_group(event['group_id'], event['state'])
                 case _:
-                    print(f"Received unknown message type: {data}")
+                    print(f"Received unknown message type: {event}")
 
     def update_group(self, group_id, state):
         if self.groups.get(group_id):
