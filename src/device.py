@@ -24,3 +24,15 @@ class Device:
         self.has_color = device_info.get("hascolor")
         self.color_capabilities = device_info.get("color_capabilities")
         self.capabilities = device_info.get("capabilities")
+
+        # set to true if device state is set directly by user
+        self.custom_state = False
+
+    def __repr__(self):
+        return f'''
+        name: {self.name}
+        type: {self.type}
+        id: {self.id}
+        state: {self.state}
+        custom_state: {self.custom_state}
+        '''

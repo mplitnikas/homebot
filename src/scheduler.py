@@ -6,7 +6,6 @@ class Scheduler:
 
     def __init__(self, homebot):
         self.homebot = homebot
-        self.dispatcher = homebot.dispatcher
         self.weather_client = homebot.weather_client
         self.cc = homebot.color_calculator
 
@@ -37,10 +36,10 @@ class Scheduler:
 
     def preset_set(self, uv, force_on=False):
         color_settings = self.cc.calculate_color_settings(uv, force_on)
-        self.dispatcher.set_group_state(self.homebot.MOOD_LIGHTS_GROUP, color_settings)
+        self.homebot.set_group_state(self.homebot.MOOD_LIGHTS_GROUP, color_settings)
 
         non_color_settings = self.cc.calculate_non_color_settings(uv, force_on)
-        self.dispatcher.set_group_state(self.homebot.MAIN_LIGHTS_GROUP, non_color_settings)
+        self.homebot.set_group_state(self.homebot.MAIN_LIGHTS_GROUP, non_color_settings)
 
     # =======
 

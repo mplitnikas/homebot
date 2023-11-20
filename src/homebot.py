@@ -2,15 +2,19 @@
 
 import os
 import sys
+import threading
 from dotenv import load_dotenv
 
+from api import Api
 from color_calculator import ColorCalculator
 from device import Device
 from dispatcher import Dispatcher
 from scheduler import Scheduler
 from weather_client import WeatherClient
-from api import Api
-# from websocket_listener import WebsocketListener
+from websocket_listener import WebsocketListener
+
+from device import Device
+from group import Group
 
 load_dotenv()
 
@@ -49,20 +53,37 @@ class Homebot:
         self.color_calculator = ColorCalculator(self)
         self.dispatcher = Dispatcher(api_url=self.PHOSCON_API_URL, api_key=self.PHOSCON_API_KEY)
         self.scheduler = Scheduler(self)
-        # self.websocket_listener = WebsocketListener()
-        # self.selected_device = None
-        # self.selected_group = None
-        # self.devices = self.get_devices()
-        # self.groups = []
+        self.websocket_listener = WebsocketListener(self, websocket_url=self.PHOSCON_WEBSOCKETS_URL)
 
-    def get_devices(self):
-        return self.dispatcher.get_devices()
-
-    def update_devices(self):
-        self.devices = self.get_devices()
+        self.devices = self.dispatcher.get_devices()
+        self.groups = self.dispatcher.get_groups()
+        group_all = Group(self.dispatcher.get_group_all(), self.ALL_LIGHTS_GROUP)
+        self.groups[self.ALL_LIGHTS_GROUP] = group_all
+        for group in self.groups.values():
+            for light_id in group.lights:
+                group.devices.append(self.devices[light_id])
 
     def is_all_off(self):
         return self.dispatcher.is_all_off()
+
+    def set_device_state(self, device_id, state):
+        self.dispatcher.set_device_state(device_id, state)
+        self.devices[device_id].custom_state = True
+
+    def reset_device_state(self, device_id):
+        # TODO reset device state to time of day preset
+        self.devices[device_id].custom_state = False
+
+    def set_group_state(self, group_id, state):
+        self.dispatcher.set_group_state(group_id, state)
+        for device in self.groups[group_id].devices:
+            self.devices[device.id].custom_state = True
+
+    def reset_group_state(self, group_id):
+        # TODO reset group state to time of day preset
+        for device in self.groups[group_id].devices:
+            self.devices[device.id].custom_state = False
+
 
     # update light state from websocket event
 
@@ -74,6 +95,9 @@ class Homebot:
 if __name__ == '__main__' and not sys.flags.interactive:
     homebot = Homebot()
     homebot.scheduler.schedule_jobs()
-    homebot.scheduler.run_jobs()
-    home.api.run()
-    # TODO thread these
+    job_runner = threading.Thread(target=homebot.scheduler.run_jobs)
+    job_runner.start()
+    # api_runner = threading.Thread(target=Api.run, daemon=True)
+    # api_runner.start()
+    websocket_runner = threading.Thread(target=homebot.websocket_listener.run)
+    websocket_runner.start()

@@ -30,7 +30,6 @@ class ColorCalculator:
         return settings
 
     def uv_to_bulb_settings(self, uv_index):
-        # Maximum UV index you defined
         uv_max = 9
         if uv_index > uv_max:
             uv_index = uv_max
@@ -45,10 +44,8 @@ class ColorCalculator:
         hue_min = 1600
         sat_min = 25
 
-        # Calculate the bulb settings based on the current UV index
         bri = int((uv_index / uv_max) * (bri_max - bri_min) + bri_min)
         hue = int((uv_index / uv_max) * (hue_max - hue_min) + hue_min)
         sat = int((1 - uv_index / uv_max) * (sat_max - sat_min) + sat_min)  # Inverse relationship
 
-        # Return the bulb settings as a dictionary
         return {"bri": bri, "hue": hue, "sat": sat}
