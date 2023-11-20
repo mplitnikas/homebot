@@ -1,6 +1,8 @@
 #! /usr/bin/env python3
 
+import json
 import os
+import redis
 import sys
 import threading
 from dotenv import load_dotenv
@@ -40,6 +42,10 @@ class Homebot:
     MAIN_LIGHTS_GROUP = os.getenv('MAIN_LIGHTS_GROUP')
     BEDROOM_LIGHTS_GROUP = os.getenv('BEDROOM_LIGHTS_GROUP')
 
+    REDIS_HOST = os.getenv('REDIS_HOST')
+    REDIS_PORT = os.getenv('REDIS_PORT')
+    REDIS_UPDATE_CHANNEL = os.getenv('REDIS_UPDATE_CHANNEL') # device state updates etc
+
     def __init__(self):
         self.weather_client = WeatherClient(
             weather_api_url=self.WEATHER_API_URL,
@@ -48,12 +54,15 @@ class Homebot:
             uv_api_url=self.UV_API_URL,
             uv_api_key=self.UV_API_KEY,
             uv_local_lat=self.LOCAL_LAT,
-            uv_local_lng=self.LOCAL_LNG
-        )
+            uv_local_lng=self.LOCAL_LNG)
         self.color_calculator = ColorCalculator(self)
         self.dispatcher = Dispatcher(api_url=self.PHOSCON_API_URL, api_key=self.PHOSCON_API_KEY)
         self.scheduler = Scheduler(self)
-        self.websocket_listener = WebsocketListener(self, websocket_url=self.PHOSCON_WEBSOCKETS_URL)
+        self.websocket_listener = WebsocketListener(
+                websocket_url=self.PHOSCON_WEBSOCKETS_URL,
+                redis_host=self.REDIS_HOST,
+                redis_port=self.REDIS_PORT,
+                redis_update_channel=self.REDIS_UPDATE_CHANNEL)
 
         self.devices = self.dispatcher.get_devices()
         self.groups = self.dispatcher.get_groups()
@@ -62,6 +71,10 @@ class Homebot:
         for group in self.groups.values():
             for light_id in group.lights:
                 group.devices.append(self.devices[light_id])
+
+        self.redis_client = redis.Redis(host=self.REDIS_HOST, port=self.REDIS_PORT, db=0, decode_responses=True)
+        self.updates_subscriber = self.redis_client.pubsub(ignore_subscribe_messages=True)
+        self.updates_subscriber.subscribe(**{self.REDIS_UPDATE_CHANNEL: self.updates_handler})
 
     def is_all_off(self):
         return self.dispatcher.is_all_off()
@@ -84,13 +97,30 @@ class Homebot:
         for device in self.groups[group_id].devices:
             self.devices[device.id].custom_state = False
 
+    # redis pubsub listeners
 
-    # update light state from websocket event
+    def updates_handler(self, message):
+        if message and message['data']:
+            data = json.loads(message['data'])
+            match data['type']:
+                case "device":
+                    self.update_device(data['device_id'], data['state'])
+                case "group":
+                    self.update_group(data['group_id'], data['state'])
+                case _:
+                    print(f"Received unknown message type: {data}")
 
-    # handle button events from remote incl long-press & double-click
-    # leave non-simple press events for later, may not be needed
-    # for now, just toggle all lights off / on in current state for schedule
+    def update_group(self, group_id, state):
+        if self.groups.get(group_id):
+            self.groups[group_id].state.update(state)
+        else:
+            print(f"Received update for unknown group id {group_id}")
 
+    def update_device(self, device_id, state):
+        if self.devices.get(device_id):
+            self.devices[device_id].state.update(state)
+        else:
+            print(f"Received update for unknown device id {device_id}")
 
 if __name__ == '__main__' and not sys.flags.interactive:
     homebot = Homebot()
@@ -101,3 +131,5 @@ if __name__ == '__main__' and not sys.flags.interactive:
     # api_runner.start()
     websocket_runner = threading.Thread(target=homebot.websocket_listener.run)
     websocket_runner.start()
+
+    homebot.updates_subscriber.run_in_thread(sleep_time=0.001)
