@@ -38,8 +38,5 @@ class TimePublisher:
             self.time_of_day_jobs.append(job)
 
     def publish_time_of_day(self, time_of_day):
-        self.redis_client.publish(self.redis_time_channel, json.dumps({"time_of_day": time_of_day}))
-
-    # reads times of day from file
-    # schedule jobs to publish time of day to redis
-    # also schedule job to update sun times overnight (thru weather client)
+        self.redis_client.publish(self.redis_time_channel, time_of_day)
+        self.redis_client.set('time_of_day', time_of_day)

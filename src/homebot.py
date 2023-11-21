@@ -59,7 +59,7 @@ class Homebot:
             uv_local_lng=self.LOCAL_LNG)
         self.color_calculator = ColorCalculator(self)
         self.dispatcher = Dispatcher(api_url=self.PHOSCON_API_URL, api_key=self.PHOSCON_API_KEY)
-        self.scheduler = Scheduler(self)
+        self.scheduler = Scheduler(self.dispatcher, self.color_calculator, self.REDIS_HOST, self.REDIS_PORT, self.REDIS_TIME_CHANNEL)
         self.websocket_listener = WebsocketListener(
                 websocket_url=self.PHOSCON_WEBSOCKETS_URL,
                 redis_host=self.REDIS_HOST,
@@ -127,12 +127,11 @@ class Homebot:
 
 if __name__ == '__main__' and not sys.flags.interactive:
     homebot = Homebot()
-    homebot.scheduler.schedule_jobs()
-    job_runner = threading.Thread(target=homebot.scheduler.run_jobs)
-    job_runner.start()
     # api_runner = threading.Thread(target=Api.run, daemon=True)
     # api_runner.start()
     websocket_runner = threading.Thread(target=homebot.websocket_listener.run)
     websocket_runner.start()
 
-    homebot.updates_subscriber.run_in_thread(sleep_time=0.001)
+    homebot.scheduler.run()
+
+    homebot.updates_subscriber.run_in_thread(sleep_time=0.01)
